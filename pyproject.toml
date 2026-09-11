@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "wraith-dj"
+version = "0.0.0"
+description = "Gesture-controlled MIDI DJ controller"
+requires-python = ">=3.10"
+dependencies = [
+    "mediapipe==1.0.1",
+    "mido==1.3.3",
+    "python-rtmidi==1.5.8",
+    "opencv-python==5.0.0.93",
+    "PySide6==6.11.2",
+    "pyyaml==6.0.3",
+]
+
+[project.scripts]
+wraith = "wraith_app.app:run"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wraith_app"]
