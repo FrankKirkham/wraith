@@ -217,5 +217,5 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Downloaded ML model bundles (fetched on first run by prototype.py)
+# Downloaded ML model bundles
 models/
