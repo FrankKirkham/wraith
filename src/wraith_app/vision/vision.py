@@ -1,9 +1,13 @@
+# The only module that touches MediaPipe: it turns raw detector output into
+# the plain Hand/HandFrame types from hand.py before anything else sees it.
 import urllib.request
 from pathlib import Path
 from mediapipe.tasks.python import vision, BaseOptions
 import mediapipe as mp
 import cv2
 import time
+
+from wraith_app.vision.hand import Hand, HandFrame, Handedness, Landmark
 
 #### Constants ####
 MODEL_URL = (
@@ -40,7 +44,7 @@ class HandTracker():
         self.landmarker = vision.HandLandmarker.create_from_options(options)
         self.start_time = time.monotonic()
 
-    def detect(self, frame):
+    def detect(self, frame) -> HandFrame:
         # Open cv gives BGR, MediaPipe works with RGB
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
@@ -49,12 +53,33 @@ class HandTracker():
         # Run the detection and classificiation
         result = self.landmarker.detect_for_video(mp_image, timestamp_ms)
 
-        return result
+        return to_hand_frame(result)
 
     def close(self):
         if self.landmarker is not None:
             self.landmarker.close()
 
+
+def to_hand_frame(result) -> HandFrame:
+    # Convert a MediaPipe HandLandmarkerResult into our own types.
+    hands = []
+
+    for landmarks, handedness in zip(result.hand_landmarks, result.handedness):
+        category = handedness[0]
+        hands.append(Hand(
+            handedness=to_handedness(category.category_name),
+            landmarks=tuple(
+                Landmark(x=lm.x, y=lm.y, z=lm.z) for lm in landmarks
+            ),
+            handedness_score=category.score,
+        ))
+
+    return HandFrame(hands=tuple(hands))
+
+def to_handedness(category_name: str) -> Handedness:
+    # The frame is mirrored before detection, so MediaPipe's label is the
+    # opposite of the hand the user is actually holding up.
+    return Handedness.RIGHT if category_name == "Left" else Handedness.LEFT
 
 def ensure_model() -> Path:
     if not MODEL_PATH.exists():
@@ -74,12 +99,12 @@ def open_camera(max_index=5):
 
     raise SystemExit(f"Could not open any camera (tried indices 0-{max_index})")
 
-def draw_hands(frame, hands):
+def draw_hands(frame, hand_frame: HandFrame):
     height, width = frame.shape[:2]
 
-    for landmarks, handedness in zip(hands.hand_landmarks, hands.handedness):
+    for hand in hand_frame:
         # Convert normalised ([0, 1]) coords to pixel points
-        points = [(int(lm.x * width), int(lm.y * height)) for lm in landmarks ]
+        points = [(int(lm.x * width), int(lm.y * height)) for lm in hand.landmarks]
 
         # Draw the lines then the points on top
         for connection in HAND_CONNECTIONS:
@@ -93,14 +118,10 @@ def draw_hands(frame, hands):
         for point in points:
             cv2.circle(frame, point, LANDMARK_RADIUS, LANDMARK_COLOR, -1)
 
-        raw_label = handedness[0].category_name
-        # As camera is flipped we need to reverse the labels
-        label = "Right" if raw_label == "Left" else "Left"
-
         # Label the hand on the video next to its wrist.
         cv2.putText(
             frame,
-            label,
+            hand.handedness.value,
             (points[0][0] + 10, points[0][1] + 10),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,

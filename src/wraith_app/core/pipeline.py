@@ -41,14 +41,14 @@ class Pipeline():
         frame = cv2.flip(frame, 1)
 
         # Detect the hands
-        hands = self.hand_tracker.detect(frame)
+        hand_frame = self.hand_tracker.detect(frame)
 
         # Draw the hands onto the image
-        vision.draw_hands(frame, hands)
+        vision.draw_hands(frame, hand_frame)
 
         # Map the hands to a midi signal and send this on our port
-        if hands.hand_landmarks:
-            messages = mapping.map_hands_to_midi(hands)
+        if hand_frame:
+            messages = mapping.map_hands_to_midi(hand_frame)
             self.midi_port.send_message(messages)
 
         cv2.imshow(self.window_name, frame)
