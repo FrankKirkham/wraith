@@ -10,8 +10,9 @@ MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/hand_landmarker/"
     "hand_landmarker/float16/latest/hand_landmarker.task"
 )
-# This file is in src/wraith_app so need to go up two then to the models/ dir
-MODEL_PATH = Path(__file__).resolve().parents[2] / "models" / "hand_landmarker.task"
+# This file is in src/wraith_app/vision so need to go up three to the repo
+# root, then into the models/ dir
+MODEL_PATH = Path(__file__).resolve().parents[3] / "models" / "hand_landmarker.task"
 
 HAND_CONNECTIONS = vision.HandLandmarksConnections.HAND_CONNECTIONS
 
