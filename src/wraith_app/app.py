@@ -5,6 +5,7 @@ from wraith_app.vision import HandTracker
 import cv2
 
 WINDOW_NAME = "Wraith v0.1.0"
+MIDI_PORT_NAME = "Wraith Gesture Controller"
 
 def run() -> None:
     print("Starting app...")
@@ -13,7 +14,7 @@ def run() -> None:
     model_path = vision.ensure_model()
 
     # Setup and open the port
-    midi_port = VirtualMidiPort("Wraith Gesture Controller")
+    midi_port = VirtualMidiPort(MIDI_PORT_NAME)
     midi_port.open()
 
     # Setup the hand detector
@@ -37,10 +38,10 @@ def run() -> None:
             # Draw the hands onto the image
             vision.draw_hands(frame, hands)
 
+            # Map the hands to a midi signal and send this on our port
             if hands.hand_landmarks:
-                ... # Map to midi and send message
-            else:
-                ...
+                messages = mapping.map_hands_to_midi(hands)
+                midi_port.send_message(messages)
 
             cv2.imshow(WINDOW_NAME, frame)
             # Queue the frame and have it shut with 'q'
