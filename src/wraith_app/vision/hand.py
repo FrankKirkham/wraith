@@ -12,6 +12,15 @@ class Handedness(Enum):
     LEFT = "Left"
     RIGHT = "Right"
 
+class ScreenSide(Enum):
+    # Which half of the (mirrored) camera frame a hand is in, as the user
+    # sees it. Independent of handedness: either hand can be on either side
+    LEFT = "Left"
+    RIGHT = "Right"
+
+# x below this is the left half of the frame, at or above it the right half
+SCREEN_MIDPOINT = 0.5
+
 class HandLandmark(IntEnum):
     # Index of each landmark within a hand's 21-point list, in the order
     # the hand landmarker returns them.
@@ -64,6 +73,14 @@ class Hand():
         return self.landmark(HandLandmark.WRIST)
 
     @property
+    def screen_side(self) -> ScreenSide:
+        # The wrist is the hand's anchor point, so it decides the side even
+        # if the fingers reach across the midpoint
+        if self.wrist.x < SCREEN_MIDPOINT:
+            return ScreenSide.LEFT
+        return ScreenSide.RIGHT
+
+    @property
     def is_left(self) -> bool:
         return self.handedness is Handedness.LEFT
 
@@ -85,6 +102,11 @@ class HandFrame():
     @property
     def right(self) -> Hand | None:
         return next((hand for hand in self.hands if hand.is_right), None)
+
+    def hands_on(self, side: ScreenSide) -> Tuple[Hand, ...]:
+        # Every hand in that half of the frame - both hands can be on the
+        # same side, in which case the other side gets none
+        return tuple(hand for hand in self.hands if hand.screen_side is side)
 
     def __iter__(self) -> Iterator[Hand]:
         return iter(self.hands)

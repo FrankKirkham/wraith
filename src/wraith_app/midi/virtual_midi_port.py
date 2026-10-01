@@ -1,14 +1,16 @@
 import mido
-from typing import Tuple
+from typing import List, Tuple
 
 class VirtualMidiPort():
     port_name: str
     port = None
-    last_l_message = None
-    last_r_message = None
+    # The last message sent for each slot of the tuple the mapper produces
+    # (one per channel), so unchanged values are not resent
+    last_messages: List[mido.Message | None]
 
     def __init__(self, port_name: str) -> None:
         self.port_name = port_name
+        self.last_messages = [None, None]
 
     def open(self):
         self.port = mido.open_output(self.port_name, virtual=True)
@@ -26,12 +28,16 @@ class VirtualMidiPort():
         if self.port is None:
             raise RuntimeError("Port is not open")
 
-        l_message, r_message = messages
+        for slot, message in enumerate(messages):
+            # None means nothing to control on that channel this frame
+            if message is None:
+                continue
 
-        if l_message is not None and (self.last_l_message is None or l_message != self.last_l_message):
-            self.port.send(l_message)
-            self.last_l_message = l_message
+            # mido refuses to compare a message against None, so only check
+            # for a repeat once there is something to compare against
+            last = self.last_messages[slot]
+            if last is not None and message == last:
+                continue
 
-        if r_message is not None and (self.last_r_message is None or r_message != self.last_r_message):
-            self.port.send(r_message)
-            self.last_r_message = r_message
+            self.port.send(message)
+            self.last_messages[slot] = message
