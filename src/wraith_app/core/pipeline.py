@@ -1,6 +1,7 @@
 # The main app loop: vision -> mapping -> virtual_midi_port
 from wraith_app.mapping import mapping
 from wraith_app.midi.virtual_midi_port import VirtualMidiPort
+from wraith_app import settings
 from wraith_app.vision import vision
 from wraith_app.vision.vision import HandTracker
 import cv2
@@ -16,8 +17,11 @@ class Pipeline():
     def __init__(self, window_name: str = WINDOW_NAME, midi_port_name: str = MIDI_PORT_NAME) -> None:
         self.window_name = window_name
         self.midi_port_name = midi_port_name
+        self.settings = settings.Settings()
 
     def start(self):
+        self.settings = settings.load()
+
         # Find or download the hand landmarker model
         model_path = vision.ensure_model()
 
@@ -43,8 +47,8 @@ class Pipeline():
         # Detect the hands
         hand_frame = self.hand_tracker.detect(frame)
 
-        # Draw the hands onto the image
-        vision.draw_hands(frame, hand_frame)
+        if self.settings.visuals.show_hand_overlay:
+            vision.draw_hands(frame, hand_frame)
 
         # Map the hands to a midi signal and send this on our port
         if hand_frame:
