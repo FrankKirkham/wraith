@@ -219,3 +219,6 @@ __marimo__/
 
 # Downloaded ML model bundles
 models/
+
+# Raw hand recordings; curated ones get moved into tests/fixtures/
+tools/fixtures/

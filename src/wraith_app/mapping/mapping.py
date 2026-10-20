@@ -1,10 +1,11 @@
 import mido
 from typing import Tuple
 
-from wraith_app.vision.hand import Hand, HandFrame, ScreenSide
+from wraith_app.gestures.pose import Pose
+from wraith_app.gestures.recognizer import GestureFrame, SideGesture
+from wraith_app.vision.hand import ScreenSide
 
 MIDI_MAX = 127
-MIDI_CC_NUMBER = 1 # temporary choice for now
 
 # Which half of the screen a hand is in decides the channel it controls -
 # not whether it is the user's left or right hand
@@ -13,44 +14,38 @@ CHANNEL_FOR_SIDE = {
     ScreenSide.RIGHT: 1,
 }
 
-def map_hands_to_midi(hand_frame: HandFrame) -> Tuple[mido.Message | None, mido.Message | None]:
-    # One message per channel, in screen order (left half, right half). A
-    # side with no hand in it gets None and so is left alone
-    # Will later be changed to detect and use guestures to decide messages
+# Each pinch drives its own CC; the attribute names its Pinch on Pinches
+PINCH_CONTROLS = {
+    Pose.PINCH_INDEX: ("index", 1),
+    Pose.PINCH_MIDDLE: ("middle", 2),
+    Pose.PINCH_RING: ("ring", 3),
+    Pose.PINCH_PINKY: ("pinky", 4),
+}
+
+def map_gestures_to_midi(gesture_frame: GestureFrame) -> Tuple[mido.Message | None, mido.Message | None]:
+    # One message per channel, in screen order (left half, right half). None
+    # leaves that channel alone, so its controls hold their last value
     return (
-        map_side(hand_frame, ScreenSide.LEFT),
-        map_side(hand_frame, ScreenSide.RIGHT),
+        map_side(gesture_frame.side(ScreenSide.LEFT), ScreenSide.LEFT),
+        map_side(gesture_frame.side(ScreenSide.RIGHT), ScreenSide.RIGHT),
     )
 
-def map_side(hand_frame: HandFrame, side: ScreenSide) -> mido.Message | None:
-    hand = controlling_hand(hand_frame, side)
-    if hand is None:
+def map_side(gesture: SideGesture, side: ScreenSide) -> mido.Message | None:
+    control = PINCH_CONTROLS.get(gesture.pose)
+    if control is None or gesture.features is None:
         return None
 
-    # Currently just takes the wrist height and converts this into a cc
-    # value used for volume
+    finger, cc_number = control
+    pinch = getattr(gesture.features.pinches, finger)
     return mido.Message(
         "control_change",
         channel=CHANNEL_FOR_SIDE[side],
-        control=MIDI_CC_NUMBER,
-        value=wrist_y_to_cc(hand.wrist.y),
+        control=cc_number,
+        value=y_to_cc(pinch.point.y),
     )
 
-def controlling_hand(hand_frame: HandFrame, side: ScreenSide) -> Hand | None:
-    # Both hands can sit in the same half of the frame, so one has to win:
-    # take the outermost, i.e. the one nearest that side's edge of the
-    # screen. That stays stable as the pair drifts around together, and
-    # means bringing a second hand over does not steal the channel
-    hands = hand_frame.hands_on(side)
-    if not hands:
-        return None
-
-    if side is ScreenSide.LEFT:
-        return min(hands, key=lambda hand: hand.wrist.x)
-    else:
-        return max(hands, key=lambda hand: hand.wrist.x)
-
-def wrist_y_to_cc(wrist_y):
-    height = 1.0 - wrist_y
+def y_to_cc(y: float) -> int:
+    # Top of the frame is MIDI_MAX
+    height = 1.0 - y
     value = round(height * MIDI_MAX)
     return max(0, min(MIDI_MAX, value))
