@@ -1,4 +1,7 @@
-# The main app loop: vision -> mapping -> virtual_midi_port
+# The main app loop: vision -> gestures -> mapping -> virtual_midi_port
+import time
+
+from wraith_app.gestures.recognizer import GestureRecognizer
 from wraith_app.mapping import mapping
 from wraith_app.midi.virtual_midi_port import VirtualMidiPort
 from wraith_app import settings
@@ -6,12 +9,13 @@ from wraith_app.vision import vision
 from wraith_app.vision.vision import HandTracker
 import cv2
 
-WINDOW_NAME = "Wraith v0.1.0"
+WINDOW_NAME = "Wraith v0.2.0"
 MIDI_PORT_NAME = "Wraith Gesture Controller"
 
 class Pipeline():
     midi_port = None
     hand_tracker = None
+    gestures = None
     cap = None
 
     def __init__(self, window_name: str = WINDOW_NAME, midi_port_name: str = MIDI_PORT_NAME) -> None:
@@ -31,6 +35,7 @@ class Pipeline():
 
         # Setup the hand detector
         self.hand_tracker = HandTracker(model_path)
+        self.gestures = GestureRecognizer()
         # Get the video capture
         self.cap = vision.open_camera()
 
@@ -50,10 +55,12 @@ class Pipeline():
         if self.settings.visuals.show_hand_overlay:
             vision.draw_hands(frame, hand_frame)
 
-        # Map the hands to a midi signal and send this on our port
-        if hand_frame:
-            messages = mapping.map_hands_to_midi(hand_frame)
-            self.midi_port.send_message(messages)
+        # Every frame, even with no hands, so dropout timing works
+        gesture_frame = self.gestures.update(time.monotonic(), hand_frame)
+
+        # Map the gestures to a midi signal and send this on our port
+        messages = mapping.map_gestures_to_midi(gesture_frame)
+        self.midi_port.send_message(messages)
 
         cv2.imshow(self.window_name, frame)
         # Queue the frame and have it shut with 'q'

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MixxxControllerPreset schemaVersion="1" mixxxVersion="2.4.0+">
+    <info>
+        <name>Wraith Gesture Controller</name>
+        <author>Frank Kirkham</author>
+        <description>Hand gestures over a webcam. Left half of the screen controls deck 1 (MIDI channel 1), right half controls deck 2 (MIDI channel 2). Pinch index = volume, middle = low EQ, ring = mid EQ, pinky = high EQ; pinch height sets the value.</description>
+    </info>
+    <controller id="Wraith">
+        <scriptfiles/>
+        <controls>
+            <!-- Deck 1: MIDI channel 1 (status 0xB0) -->
+            <control>
+                <group>[Channel1]</group>
+                <key>volume</key>
+                <description>Deck 1 volume (index pinch)</description>
+                <status>0xB0</status>
+                <midino>0x01</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel1]_Effect1]</group>
+                <key>parameter1</key>
+                <description>Deck 1 low EQ (middle pinch)</description>
+                <status>0xB0</status>
+                <midino>0x02</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel1]_Effect1]</group>
+                <key>parameter2</key>
+                <description>Deck 1 mid EQ (ring pinch)</description>
+                <status>0xB0</status>
+                <midino>0x03</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel1]_Effect1]</group>
+                <key>parameter3</key>
+                <description>Deck 1 high EQ (pinky pinch)</description>
+                <status>0xB0</status>
+                <midino>0x04</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+
+            <!-- Deck 2: MIDI channel 2 (status 0xB1) -->
+            <control>
+                <group>[Channel2]</group>
+                <key>volume</key>
+                <description>Deck 2 volume (index pinch)</description>
+                <status>0xB1</status>
+                <midino>0x01</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel2]_Effect1]</group>
+                <key>parameter1</key>
+                <description>Deck 2 low EQ (middle pinch)</description>
+                <status>0xB1</status>
+                <midino>0x02</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel2]_Effect1]</group>
+                <key>parameter2</key>
+                <description>Deck 2 mid EQ (ring pinch)</description>
+                <status>0xB1</status>
+                <midino>0x03</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+            <control>
+                <group>[EqualizerRack1_[Channel2]_Effect1]</group>
+                <key>parameter3</key>
+                <description>Deck 2 high EQ (pinky pinch)</description>
+                <status>0xB1</status>
+                <midino>0x04</midino>
+                <options>
+                    <normal/>
+                </options>
+            </control>
+        </controls>
+        <outputs/>
+    </controller>
+</MixxxControllerPreset>

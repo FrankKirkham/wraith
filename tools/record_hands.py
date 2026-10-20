@@ -1,4 +1,4 @@
-# Records HandFrames from the webcam to a JSON file for use as test fixtures
+# Records HandFrames from the webcam to a JSON file in tools/fixtures/ by default
 #
 # Usage: python tools/record_hands.py [output.json]
 # Space starts recording, space again stops and saves. q quits without saving
@@ -13,7 +13,7 @@ from wraith_app.vision import vision
 from wraith_app.vision.recording import RecordedFrame, save_recording
 
 WINDOW_NAME = "Wraith recorder"
-FIXTURES_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 REC_COLOR = (0, 0, 255)
 
 def default_output_path() -> Path:
