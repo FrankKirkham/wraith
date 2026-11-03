@@ -9,7 +9,6 @@ from wraith_app.vision import vision
 from wraith_app.vision.vision import HandTracker
 import cv2
 
-WINDOW_NAME = "Wraith v0.2.0"
 MIDI_PORT_NAME = "Wraith Gesture Controller"
 
 class Pipeline():
@@ -18,8 +17,7 @@ class Pipeline():
     gestures = None
     cap = None
 
-    def __init__(self, window_name: str = WINDOW_NAME, midi_port_name: str = MIDI_PORT_NAME) -> None:
-        self.window_name = window_name
+    def __init__(self, midi_port_name: str = MIDI_PORT_NAME) -> None:
         self.midi_port_name = midi_port_name
         self.settings = settings.Settings()
 
@@ -39,12 +37,12 @@ class Pipeline():
         # Get the video capture
         self.cap = vision.open_camera()
 
-    def process_frame(self) -> bool:
-        # Run one frame through the pipeline; False means the camera is done
+    def process_frame(self):
+        # Run one frame through the pipeline and return it; None means the camera is done
         ok, frame = self.cap.read()
         if not ok:
             print("Failed to read from camera; stopping")
-            return False
+            return None
 
         # Mirror first so everything after works in mirrored
         frame = cv2.flip(frame, 1)
@@ -59,27 +57,15 @@ class Pipeline():
         gesture_frame = self.gestures.update(time.monotonic(), hand_frame)
 
         # Map the gestures to a midi signal and send this on our port
-        messages = mapping.map_gestures_to_midi(gesture_frame)
+        messages = mapping.map_gestures_to_midi(gesture_frame, self.settings.controls)
         self.midi_port.send_message(messages)
 
-        cv2.imshow(self.window_name, frame)
-        # Queue the frame and have it shut with 'q'
-        return not (cv2.waitKey(1) & 0xFF == ord("q"))
-
-    def run(self):
-        self.start()
-        try:
-            while self.process_frame():
-                pass
-        finally: # Close down everything (whether it worked or didn't)
-            self.close()
+        return frame
 
     def close(self):
         if self.cap is not None:
             self.cap.release()
             self.cap = None
-
-        cv2.destroyAllWindows()
 
         if self.hand_tracker is not None:
             self.hand_tracker.close()

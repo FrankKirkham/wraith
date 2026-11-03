@@ -10,23 +10,31 @@ class _Base(BaseModel):
 
 class Visuals(_Base):
     show_hand_overlay: bool = True
+    show_centre_line: bool = False
 
-# Number of discrete steps a control's output is snapped to; 128 is full MIDI CC resolution
-Quantisation = Literal[4, 8, 16, 32, 64, 128]
+QUANTISATION_LEVELS = (1, 2, 3, 4, 5, 6)
+
+class Quantisation(_Base):
+    # 1 is full resolution; each level up halves the number of values. A level rather than a value count, so it 
+    # survives switching modes like negative_eq_only
+    level: Literal[1, 2, 3, 4, 5, 6] = 1
 
 class Control(_Base):
-    quantisation: Quantisation = 128
+    quantisation: Quantisation = Field(default_factory=Quantisation)
 
 class VolumeSlider(Control):
     pass
 
-class LowEqKnob(Control):
+class EqKnob(Control):
+    negative_eq_only: bool = False # only cut, from the centre value down
+
+class LowEqKnob(EqKnob):
     pass
 
-class MidEqKnob(Control):
+class MidEqKnob(EqKnob):
     pass
 
-class HighEqKnob(Control):
+class HighEqKnob(EqKnob):
     pass
 
 class Controls(_Base):
@@ -42,8 +50,8 @@ class Settings(_Base):
 
 
 def validate(data: dict) -> Settings:
-    # Drop only the fields that fail validation so they fall back to their
-    # defaults, rather than rejecting the whole file
+    # Drop only the fields that fail validation so they fall back to their defaults, 
+    # rather than rejecting the whole file
     data = dict(data)
     for _ in range(50):
         try:
