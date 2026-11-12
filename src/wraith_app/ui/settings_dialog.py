@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGroupBox
+from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGroupBox, QSpinBox
 
 from wraith_app import settings
 from wraith_app.mapping.quantisation import eq_steps, volume_steps
@@ -17,6 +17,15 @@ class SettingsDialog(QDialog):
         self.setWindowTitle("Settings")
         self._current = current
 
+        self.active_height = QSpinBox()
+        self.active_height.setRange(50, 100)
+        self.active_height.setSingleStep(5)
+        self.active_height.setSuffix("%")
+        self.active_height.setValue(current.controls.active_height)
+        self.active_height.setToolTip(
+            "How much of the camera's height controls the faders and knobs."
+        )
+
         self.show_hand_overlay = QCheckBox()
         self.show_hand_overlay.setChecked(current.visuals.show_hand_overlay)
 
@@ -32,6 +41,7 @@ class SettingsDialog(QDialog):
         layout = QFormLayout(self)
         layout.addRow("Show hand overlay", self.show_hand_overlay)
         layout.addRow("Show centre line", self.show_centre_line)
+        layout.addRow("Active height", self.active_height)
 
         self.levels: dict[str, QComboBox] = {}
         self.negative_eq_only: dict[str, QCheckBox] = {}
@@ -77,6 +87,7 @@ class SettingsDialog(QDialog):
 
     def result_settings(self) -> settings.Settings:
         updated = self._current.model_copy(deep=True)
+        updated.controls.active_height = self.active_height.value()
         updated.visuals.show_hand_overlay = self.show_hand_overlay.isChecked()
         updated.visuals.show_centre_line = self.show_centre_line.isChecked()
         for name, combo in self.levels.items():

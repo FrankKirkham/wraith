@@ -38,6 +38,7 @@ class HighEqKnob(EqKnob):
     pass
 
 class Controls(_Base):
+    active_height: int = Field(default=80, ge=50, le=100) # % of the camera height used for control, centred
     volume_slider: VolumeSlider = Field(default_factory=VolumeSlider)
     high_eq_knob: HighEqKnob = Field(default_factory=HighEqKnob)
     mid_eq_knob: MidEqKnob = Field(default_factory=MidEqKnob)

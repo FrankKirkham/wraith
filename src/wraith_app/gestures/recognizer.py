@@ -1,8 +1,7 @@
 # Turns a stream of HandFrames into GestureFrames
 #
 # Holds all memory between frames: debounce, dropout grace and multi-frame detectors. 
-# One SideTracker per half of the screen, so each side's pose and features follow 
-# whichever hand controls that side
+# One SideTracker per half of the screen, so each side's pose and features follow whichever hand controls that side
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
